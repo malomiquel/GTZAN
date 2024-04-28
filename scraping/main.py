@@ -1,15 +1,28 @@
-import pandas as pd
+import os
+from utils.genres.index import get_all_genres, get_all_musics_from_genre, download_preview_songs
 
-from utils.scraping import get_page, get_text_from_xpath_list, get_preview_url_from_xpath_list, get_href_from_xpath_list
+def ensure_directory_exists(path: str) -> None:
+    """Assure que le répertoire existe."""
+    if not os.path.exists(path):
+        os.makedirs(path)
 
+def download_genre_music(genre, href, base_path):
+    """Télécharge les musiques pour un genre donné."""
+    genre_path = os.path.join(base_path, genre)
+    ensure_directory_exists(genre_path)
 
-url = "https://everynoise.com/engenremap.html"
+    df_music = get_all_musics_from_genre(href)
 
-page = get_page(url)
+    # Télécharger les chansons de prévisualisation
+    download_preview_songs(df_music, genre)
 
-genres = get_text_from_xpath_list(page, ".//div[@class='canvas']/div")
-print(len(genres))
-preview_urls = get_preview_url_from_xpath_list(page, ".//div[@class='canvas']/div")
-print(len(preview_urls))
-hrefs = get_href_from_xpath_list(page, ".//div[@class='canvas']/div/a")
-print(len(hrefs))
+if __name__ == "__main__":
+    df_genres = get_all_genres()
+    df_genres = df_genres.head(1)  # Pour tester, on ne prend que le premier genre
+    base_path = "../data/genres"
+
+    ensure_directory_exists(base_path)  # Création du répertoire de base une seule fois
+
+    # Traitement pour chaque genre trouvé
+    for index, row in df_genres.head(1).iterrows():
+        download_genre_music(row['genre'], row['href'], base_path)
